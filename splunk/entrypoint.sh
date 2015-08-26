@@ -6,22 +6,20 @@ if [ "$1" = 'splunk' ]; then
   shift
   sudo -HEu ${SPLUNK_USER} ${SPLUNK_HOME}/bin/splunk "$@"
 elif [ "$1" = 'start-service' ]; then
+
+  sudo mkdir -p ${SPLUNK_BACKUP_DEFAULT_ETC}/etc/system/local/
+  sudo touch ${SPLUNK_BACKUP_DEFAULT_ETC}/etc/system/local/server.conf
+
+  echo "[general]" >> ${SPLUNK_BACKUP_DEFAULT_ETC}/etc/system/local/server.conf
+  echo "allowRemoteLogin = always" >> ${SPLUNK_BACKUP_DEFAULT_ETC}/etc/system/local/server.conf
   # If these files are different override etc folder (possible that this is upgrade or first start cases)
   # Also override ownership of these files to splunk:splunk
-  if ! $(cmp --silent /var/opt/splunk/etc/splunk.version ${SPLUNK_HOME}/etc/splunk.version); then
-    cp -fR /var/opt/splunk/etc ${SPLUNK_HOME}
-    chown -R ${SPLUNK_USER}:${SPLUNK_GROUP} $SPLUNK_HOME/etc
-    chown -R ${SPLUNK_USER}:${SPLUNK_GROUP} $SPLUNK_HOME/var
-  fi
+  cp -fR ${SPLUNK_BACKUP_DEFAULT_ETC}/etc ${SPLUNK_HOME}
+  chown -R ${SPLUNK_USER}:${SPLUNK_GROUP} $SPLUNK_HOME/etc
+  chown -R ${SPLUNK_USER}:${SPLUNK_GROUP} $SPLUNK_HOME/var
 
   sudo -HEu ${SPLUNK_USER} ${SPLUNK_HOME}/bin/splunk start --accept-license --answer-yes --no-prompt
   trap "sudo -HEu ${SPLUNK_USER} ${SPLUNK_HOME}/bin/splunk stop" SIGINT SIGTERM EXIT
-
-  if [[ -n ${SPLUNK_FORWARD_SERVER} ]]; then
-    if ! sudo -HEu ${SPLUNK_USER} ${SPLUNK_HOME}/bin/splunk list forward-server -auth admin:changeme | grep -q "${SPLUNK_FORWARD_SERVER}"; then
-      sudo -HEu ${SPLUNK_USER} ${SPLUNK_HOME}/bin/splunk add forward-server "${SPLUNK_FORWARD_SERVER}" -auth admin:changeme
-    fi
-  fi
 
   sudo -HEu ${SPLUNK_USER} tail -n 0 -f ${SPLUNK_HOME}/var/log/splunk/splunkd_stderr.log &
   wait
