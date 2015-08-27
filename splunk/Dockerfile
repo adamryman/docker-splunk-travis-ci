@@ -46,6 +46,10 @@ RUN apt-get install -y wget \
     && chown -R ${SPLUNK_USER}:${SPLUNK_GROUP} ${SPLUNK_BACKUP_DEFAULT_ETC} \
     && rm -rf /var/lib/apt/lists/*
 
+
+RUN mkdir -p ${SPLUNK_BACKUP_DEFAULT_ETC}/etc/system/local/
+RUN echo "[general]\nallowRemoteLogin=always" > ${SPLUNK_BACKUP_DEFAULT_ETC}/etc/system/local/server.conf
+
 COPY entrypoint.sh /sbin/entrypoint.sh
 RUN chmod +x /sbin/entrypoint.sh
 
