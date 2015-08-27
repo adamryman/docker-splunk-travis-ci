@@ -1,8 +1,8 @@
 FROM ubuntu:trusty
 
 ENV SPLUNK_PRODUCT splunk
-ENV SPLUNK_VERSION 6.2.5
-ENV SPLUNK_BUILD 272645
+ENV SPLUNK_VERSION 6.0.10
+ENV SPLUNK_BUILD 272969
 ENV SPLUNK_FILENAME splunk-${SPLUNK_VERSION}-${SPLUNK_BUILD}-Linux-x86_64.tgz
 
 ENV SPLUNK_SDK_APP_COLLECTION_URL https://gist.github.com/shakeelmohamed/99b76da3f1a4fd9dcfad/raw/d97b8b5c82b0e4b40ccee6656ede1d6aeb24d60c/sdk-app-collection.tar.gz
@@ -45,6 +45,10 @@ RUN apt-get install -y wget \
     && chown -R ${SPLUNK_USER}:${SPLUNK_GROUP} ${SPLUNK_HOME} \
     && chown -R ${SPLUNK_USER}:${SPLUNK_GROUP} ${SPLUNK_BACKUP_DEFAULT_ETC} \
     && rm -rf /var/lib/apt/lists/*
+
+
+RUN mkdir -p ${SPLUNK_BACKUP_DEFAULT_ETC}/etc/system/local/
+RUN echo "[general]\nallowRemoteLogin=always" > ${SPLUNK_BACKUP_DEFAULT_ETC}/etc/system/local/server.conf
 
 COPY entrypoint.sh /sbin/entrypoint.sh
 RUN chmod +x /sbin/entrypoint.sh
