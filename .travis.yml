@@ -1,0 +1,49 @@
+sudo: required
+
+services:
+        - docker
+
+notifications:
+        email: false
+
+before_install:
+        # Create .splunkrc file with default credentials
+        - echo host=localhost >> $HOME/.splunkrc
+        - echo username=admin >> $HOME/.splunkrc
+        - echo password=changeme >> $HOME/.splunkrc
+        # Set SPLUNK_HOME
+        - export SPLUNK_HOME="/opt/splunk"
+        # Pull docker image
+        - docker pull adamryman/splunk-travis-ci:$SPLUNK_VERSION
+        # Add DOCKER to iptables, 1/10 times this is needed
+        - sudo iptables -N DOCKER 1>/dev/null $2>1;
+        # Start Docker container
+        - until docker run -p 127.0.0.1:8089:8089 -d adamryman/splunk-travis-ci:$SPLUNK_VERSION;
+        # curl Splunk until it returns valid data indicating it has been setup, try 20 times
+        - i="0";
+          while [ $i -lt 20 ];
+          do
+            if curl -sk https://localhost:8089/services/server/info 1>/dev/null $2>1;  then
+                break;
+            fi;
+            echo $i
+            sleep 1;
+            i=$[$i+1];
+          done;
+
+language: node_js
+node_js:
+        - "0.12"
+        - "0.10"
+        - "0.8"
+        - "iojs"
+
+#Splunk versions can be set here
+env:
+        - SPLUNK_VERSION=6.2.5
+        - SPLUNK_VERSION=6.1.9
+        - SPLUNK_VERSION=6.0.10
+
+# Test script, should return non 0 exit status if a test fails
+script:
+        node sdkdo tests
